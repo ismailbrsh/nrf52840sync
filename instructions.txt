@@ -1,0 +1,67 @@
+
+
+use nrf52Dk- 1 as MASTER 
+LED 3 used for Led toggling. -led toggling time 10ms , time re-sync time every 5secs, change pin number as you need in devkit pca10050.h or so
+Button 4 used for starting Timesync
+
+
+use nrf52Dk- 2 as slave
+LED 4 used for Led toggling. -led toggling time 10ms , time re-sync time every 5secs
+
+
+
+Time Sync library has been built using timeslots radio method. you can refer to the
+https://devzone.nordicsemi.com/nordic/nordic-blog/b/blog/posts/wireless-timer-synchronization-among-nrf5-devices  for more details
+
+we are using timeslots method, directly requesting radio to exchange packets. Timer0 is used for sheduling of timeslots and EGU and PPI interfaces for proper interrupt generation, more details 
+can be found from abouve link
+
+for demo purpose code has been built on top of BLE uart sdk example as mentioned in the document
+
+noven_counter contains methods to initiate, start , event handler using APPtimer. it is set for 1ms interval
+
+in interrupt handler every 1ms counter gets incremented.
+
+copy ble_app_uart_c_timesync-timeslotV2 folder to C:\Nordic\nRF5_SDK_16.0.0_98a08e2\examples\ble_central
+copy ble_app_uart -timesync_timeslotV2 folder to C:\Nordic\nRF5_SDK_16.0.0_98a08e2\examples\ble_peripheral
+
+use segger embedded studio
+
+open master--> ble_app_uart_c_timesync-timeslotV2\pca10056\s140\ses\ble_app_uart_c_pca10056_s140.emproject
+open slave-->  ble_app_uart -timesync_timeslotV2\pca10056\s140\ses\ble_app_uart_pca10056_s140.emproject
+
+
+noven_timesync contains init, start,stop and radio interrupt handlers.
+
+from main on master side code steps as follows
+
+	intialise the variables
+	initialise time sync also sets radio for listen
+	intitalise the apptimer in timerinit 
+	
+	on button press - set the flag to send timesync packets.
+	- on time slot transmission , it reads the present counter status ,and set the packet ready for transmisssion ..to avaoid packet missing,  it tries to send 3 to 4 times before we stop sending. 
+		then counter running on locally will also be copied and synced and started.
+		
+		
+on slave side
+	
+		intialise the variables
+	initialise time sync -setup radio for listen
+	intitalise the apptimer in timerinit 
+	
+	on radio receive of packets, master timer count will be loaded to the local timer and restarts the timer
+	
+	led togggling.'
+	since led toggling will take place on low priotity from main loop or through app timer event, still getting accuracy is a challenge. but real timer counter is synchronised to 1ms accuracy, rare cases max 2ms.
+	 led toggling, can have a sync of upto 400us to 2ms accuracy, as softtimer. and inverted state can not be guaranted to be same, some times it can be opposite too, but start times will be with in time syncs
+	
+	
+	
+
+
+
+
+
+  
+
